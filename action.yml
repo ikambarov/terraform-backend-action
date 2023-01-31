@@ -1,0 +1,36 @@
+name: 'Generate Terraform Backend'
+description: 'Generate backend.tf with provided Bucket Name and Bucket Region'
+inputs:
+  s3-bucket-name:
+    description: 'Bucket Name'
+    required: true
+    default: ''
+  s3-bucket-region:
+    description: 'Bucket Region'
+    required: true
+    default: ''
+runs:
+  using: "composite"
+  steps:
+    - run: |
+          input1="${{ inputs.s3-bucket-name }}"
+          input2="${{ inputs.s3-bucket-region }}"
+          regex="^[a-z0-9-]{3,61}$"
+
+          if [[ $input1 =~ $regex ]]
+          then
+              if [[ $input2 =~ $regex ]]
+              then
+                  echo "Backend File Created"
+                  echo -e "terraform {\n  backend \"s3\" {\n    bucket = \"$input1\"\n    key    = \"state/terraform.tfstate\"\n    region = \"$input2\"\n  }\n}" | tee backend.tf
+              else
+                  echo "Invalid S3 Region Input"
+                  exit 2
+              fi
+          else
+              echo "Invalid S3 Bucket Name Input"
+              exit 1
+          fi
+      shell: bash
+    - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
